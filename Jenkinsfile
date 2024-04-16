@@ -26,7 +26,7 @@ spec:
 ) {
     node (label) {
         stage ('Checkout SCM'){
-          git credentialsId: 'git_key', url: 'https://github.com/rajeshprakashtalla/eos-micro-service-admin.git', branch: 'dev'
+          git credentialsId: 'git_key', url: 'https://github.com/rajtaldevop1/eos-micro-service-admin.git', branch: 'main'
           container('build') {
                 stage('Build a Maven project') {
                   //withEnv( ["PATH+MAVEN=${tool mvn_version}/bin"] ) {
@@ -53,7 +53,7 @@ spec:
                 stage('Artifactory configuration') {
                     rtServer (
                     id: "jfrog",
-                    url: "https://rajesh12345.jfrog.io/artifactory",
+                    url: "https://rajdev.jfrog.io/artifactory",
                     credentialsId: "Jfrog"
                 )
 
@@ -76,6 +76,8 @@ spec:
         stage ('Deploy Artifacts'){
           container('build') {
                 stage('Deploy Artifacts') {
+                    sh 'chmod 777 /home/jenkins/agent/workspace/eos-micro-services-admin_main/mvnw'
+                    //sh 'chmod 777 /home/jenkins/agent/workspace/eos-micro-services-admin/mvnw'
                     rtMavenRun (
                     tool: "java", // Tool name from Jenkins configuration
                     useWrapper: true,
@@ -112,7 +114,7 @@ spec:
             dir('charts') {
               withCredentials([usernamePassword(credentialsId: 'Jfrog', usernameVariable: 'username', passwordVariable: 'password')]) {
               sh '/usr/local/bin/helm package micro-services-admin'
-              sh '/usr/local/bin/helm push-artifactory micro-services-admin-1.0.tgz https://rajesh12345.jfrog.io/artifactory/eos-helm-local --username $username --password $password'
+              sh '/usr/local/bin/helm push-artifactory micro-services-admin-1.0.tgz https://rajdev.jfrog.io/artifactory/eos-helm-local --username $username --password $password'
               }
             }
         }
