@@ -1,5 +1,6 @@
-def label = "any"
-def mvn_version = 'M2'
+def label = "eosagent"
+//def mvn_version = 'M2'
+def mvn_version = 'maven'
 podTemplate(label: label, yaml: """
 apiVersion: v1
 kind: Pod
@@ -11,28 +12,28 @@ metadata:
 spec:
   containers:
   - name: build
-    image: rajeshtalla0209/jenkins:latest
+    image: rajeshtalla0209/eos-jenkins-agent-base:latest
     command:
     - cat
     tty: true
     volumeMounts:
     - name: dockersock
-      mountPath: /var/run/docker.sock
+      mountPath: "/var/run/docker.sock"
   volumes:
   - name: dockersock
     hostPath:
-      path: /var/run/docker.sock
+      path: "/var/run/docker.sock"
 """
 ) {
     node (label) {
         stage ('Checkout SCM'){
-          git credentialsId: 'git_key', url: 'https://github.com/rajtaldevop1/eos-micro-service-admin.git', branch: 'main'
+          git credentialsId: 'git', url: 'https://github.com/rajtaldevop1/eos-micro-service-admin.git', branch: 'main'
           container('build') {
                 stage('Build a Maven project') {
-                  //withEnv( ["PATH+MAVEN=${tool mvn_version}/bin"] ) {
-                   //sh "mvn clean package"
-                  //  }
-                  sh './mvnw clean package' 
+                  withEnv( ["PATH+MAVEN=${tool mvn_version}/bin"] ) {
+                   sh "mvn clean package"
+                   }
+                  //sh './mvnw clean package' 
                    //sh 'mvn clean package'
                 }
             }
@@ -41,7 +42,7 @@ spec:
           container('build') {
                 stage('Sonar Scan') {
                   withSonarQubeEnv('sonar') {
-                  sh './mvnw verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=eos_eos'
+                  sh 'mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=eosproj_eos'
                 }
                 }
             }
@@ -54,7 +55,7 @@ spec:
                     rtServer (
                     id: "jfrog",
                     url: "https://rajdev.jfrog.io/artifactory",
-                    credentialsId: "Jfrog"
+                    credentialsId: "jfrog"
                 )
 
                 rtMavenDeployer (
@@ -102,7 +103,7 @@ spec:
           container('build') {
                 stage('Build Image') {
                     docker.withRegistry( 'https://registry.hub.docker.com', 'docker' ) {
-                    def customImage = docker.build("rajeshtalla0209/eos-micro-service-admin:latest")
+                    def customImage = docker.build("rajeshtalla0209/eos-micro-services-admin:latest")
                     customImage.push()             
                     }
                 }
@@ -112,7 +113,7 @@ spec:
         stage ('Helm Chart') {
           container('build') {
             dir('charts') {
-              withCredentials([usernamePassword(credentialsId: 'Jfrog', usernameVariable: 'username', passwordVariable: 'password')]) {
+              withCredentials([usernamePassword(credentialsId: 'jfrog', usernameVariable: 'username', passwordVariable: 'password')]) {
               sh '/usr/local/bin/helm package micro-services-admin'
               sh '/usr/local/bin/helm push-artifactory micro-services-admin-1.0.tgz https://rajdev.jfrog.io/artifactory/eos-helm-local --username $username --password $password'
               }
