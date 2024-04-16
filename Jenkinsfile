@@ -42,7 +42,7 @@ spec:
           container('build') {
                 stage('Sonar Scan') {
                   withSonarQubeEnv('sonar') {
-                  sh 'mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=eosproj_eos'
+                  sh 'mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=eosproj1_eos'
                 }
                 }
             }
